@@ -101,7 +101,8 @@ export async function clientCrawlManga(
   source: CrawlerSource,
   storage: StorageType,
   mangaLink: string,
-  onProgress?: (progress: CrawlProgress) => void
+  onProgress?: (progress: CrawlProgress) => void,
+  selectedChapters?: string[] // Optional array of chapter names/ids to crawl
 ): Promise<{ mangaId: string; chaptersCreated: number }> {
   // Step 1: Fetch manga detail
   onProgress?.({
@@ -205,8 +206,14 @@ export async function clientCrawlManga(
   // Step 4: Create chapters and add images
   // Filter chapters if manga exists
   let chaptersToProcess = detail.chapters
+
+  // Filter by selected chapters if provided
+  if (selectedChapters && selectedChapters.length > 0) {
+    chaptersToProcess = chaptersToProcess.filter(c => selectedChapters.includes(c.name))
+  }
+
   if (exists && latestChapterOrder) {
-    chaptersToProcess = detail.chapters.filter(c => (c.order || 0) > latestChapterOrder)
+    chaptersToProcess = chaptersToProcess.filter(c => (c.order || 0) > latestChapterOrder)
     if (chaptersToProcess.length === 0) {
       onProgress?.({
         step: 'up_to_date',
@@ -260,8 +267,21 @@ export async function clientCrawlManga(
             console.warn(`Failed to upload image ${j + 1} for chapter ${chapterInfo.name}:`, error)
           }
         }
+      } else if (storage === 'hotlink') {
+        onProgress?.({
+          step: 'hotlink_save',
+          current: 1,
+          total: 1,
+          message: `Chapter ${chapterInfo.name}: Saving content (hotlink)`
+        })
+
+        try {
+          // Backend expects 'image_urls' array to join them with PHP_EOL
+          await mangaService.updateChapter(chapter.id, { image_urls: images })
+        } catch (error) {
+          console.warn(`Failed to update content for chapter ${chapterInfo.name}:`, error)
+        }
       }
-      // For hotlink mode, images are stored as URLs if backed supported it
 
       chaptersCreated++
     } catch (error) {

@@ -14,13 +14,14 @@ import type { CrawlJob } from '@/types/crawler.types'
 interface ProgressTrackerProps {
   jobs: CrawlJob[]
   onClear: () => void
+  onConfirmCrawl: (job: CrawlJob, selectedChapters: string[]) => void
 }
 
-export function ProgressTracker({ jobs, onClear }: ProgressTrackerProps) {
+export function ProgressTracker({ jobs, onClear, onConfirmCrawl }: ProgressTrackerProps) {
   const stats = {
     total: jobs.length,
     pending: jobs.filter((j) => j.status === 'pending').length,
-    crawling: jobs.filter((j) => j.status === 'crawling').length,
+    crawling: jobs.filter((j) => j.status === 'crawling' || j.status === 'preparing' || j.status === 'selecting').length,
     success: jobs.filter((j) => j.status === 'success').length,
     failed: jobs.filter((j) => j.status === 'failed').length
   }
@@ -58,7 +59,7 @@ export function ProgressTracker({ jobs, onClear }: ProgressTrackerProps) {
             <CardDescription>
               {stats.success} succeeded, {stats.failed} failed
               {!isComplete &&
-                ` • ${stats.crawling} crawling, ${stats.pending} pending`}
+                ` • ${stats.crawling} active, ${stats.pending} pending`}
             </CardDescription>
           </div>
 
@@ -75,7 +76,11 @@ export function ProgressTracker({ jobs, onClear }: ProgressTrackerProps) {
         <ScrollArea className="h-[400px] pr-4">
           <div className="space-y-3">
             {jobs.map((job, index) => (
-              <ProgressItem key={job.manga.id || index} job={job} />
+              <ProgressItem 
+                key={job.manga.id || index} 
+                job={job} 
+                onConfirmCrawl={onConfirmCrawl}
+              />
             ))}
           </div>
         </ScrollArea>

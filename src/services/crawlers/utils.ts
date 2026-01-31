@@ -46,8 +46,17 @@ export async function downloadImage(url: string): Promise<Blob> {
       if (!response.ok) {
         throw new Error(`HTTP error! status: ${response.status}`)
       }
+      
+      const contentType = response.headers.get('content-type')
+      if (contentType && !contentType.startsWith('image/')) {
+        throw new Error(`Invalid content type: ${contentType}`)
+      }
 
-      return await response.blob()
+      const blob = await response.blob()
+      if (blob.size < 100) {
+        throw new Error('Image too small, likely invalid')
+      }
+      return blob
     } catch (error) {
       console.warn(`CORS proxy ${proxy} failed for image:`, error)
       continue

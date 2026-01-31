@@ -27,6 +27,16 @@ const statusConfig: Record<
     label: 'Crawling',
     color: 'bg-yellow-100 text-yellow-700 dark:bg-yellow-900/30 dark:text-yellow-400'
   },
+  preparing: {
+    icon: Loader2,
+    label: 'Preparing',
+    color: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400'
+  },
+  selecting: {
+    icon: Clock,
+    label: 'Selecting',
+    color: 'bg-indigo-100 text-indigo-700 dark:bg-indigo-900/30 dark:text-indigo-400'
+  },
   success: {
     icon: CheckCircle2,
     label: 'Success',

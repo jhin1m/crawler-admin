@@ -112,8 +112,9 @@ export const mangaService = {
   async addChapterImage(chapterId: string, image: File | Blob): Promise<void> {
     const formData = new FormData()
     formData.append('image', image)
+    formData.append('_method', 'PUT')
 
-    await api.put(`/chapters/${chapterId}/add-img`, formData, {
+    await api.post(`/chapters/${chapterId}/add-img`, formData, {
       headers: { 'Content-Type': 'multipart/form-data' }
     })
   },
@@ -128,7 +129,13 @@ export const mangaService = {
       await this.addChapterImage(chapterId, images[i])
       onProgress?.(i + 1, images.length)
     }
-  }
+  },
+
+  // Update chapter
+  async updateChapter(id: string, data: Partial<Chapter> & { content?: string; image_urls?: string[] }): Promise<Chapter> {
+    const response = await api.put<ApiResponse<Chapter>>(`/chapters/${id}`, data)
+    return response.data.data
+  },
 }
 
 export default mangaService

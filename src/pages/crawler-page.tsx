@@ -1,4 +1,4 @@
-import { Bug, Play, RefreshCw } from 'lucide-react'
+import { Bug, RefreshCw } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Separator } from '@/components/ui/separator'
 import {
@@ -29,7 +29,7 @@ export function CrawlerPage() {
 
   const hasJobs = jobs.length > 0
   const jobsComplete = hasJobs && !jobs.some(
-    (j) => j.status === 'pending' || j.status === 'crawling'
+    (j) => j.status === 'pending' || j.status === 'crawling' || j.status === 'preparing' || j.status === 'selecting'
   )
 
   return (
@@ -58,12 +58,7 @@ export function CrawlerPage() {
             </Button>
           )}
 
-          {selectedCount > 0 && (
-            <Button onClick={startCrawl} disabled={isCrawling} size="lg">
-              <Play className="mr-2 h-4 w-4" />
-              Crawl {selectedCount} Selected
-            </Button>
-          )}
+
         </div>
       </div>
 
@@ -80,7 +75,11 @@ export function CrawlerPage() {
       {hasJobs && (
         <>
           <Separator />
-          <ProgressTracker jobs={jobs} onClear={clearJobs} />
+          <ProgressTracker 
+            jobs={jobs} 
+            onClear={clearJobs} 
+            onConfirmCrawl={(job, chapters) => crawlSingle(job.manga, chapters)}
+          />
         </>
       )}
 
@@ -92,7 +91,9 @@ export function CrawlerPage() {
           onToggleSelect={toggleSelect}
           onSelectAll={selectAll}
           onDeselectAll={deselectAll}
-          onCrawlSingle={crawlSingle}
+          onCrawlSingle={(manga) => crawlSingle(manga)}
+          onStartCrawl={startCrawl}
+          selectedCount={selectedCount}
           isLoading={isLoading}
           isCrawling={isCrawling}
         />

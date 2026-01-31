@@ -1,4 +1,4 @@
-import { Bug, CheckSquare, Square, Loader2 } from 'lucide-react'
+import { Bug, CheckSquare, Square, Loader2, Play } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -22,6 +22,8 @@ interface PreviewTableProps {
   onSelectAll: () => void
   onDeselectAll: () => void
   onCrawlSingle: (manga: MangaPreview) => void
+  onStartCrawl: () => void
+  selectedCount: number
   isLoading: boolean
   isCrawling: boolean
 }
@@ -33,12 +35,14 @@ export function PreviewTable({
   onSelectAll,
   onDeselectAll,
   onCrawlSingle,
+  onStartCrawl,
+  selectedCount,
   isLoading,
   isCrawling
 }: PreviewTableProps) {
   const newCount = previews.filter((p) => !p.exists).length
-  const allNewSelected = newCount > 0 && selectedIds.length === newCount
-
+  const allSelected = previews.length > 0 && selectedIds.length === previews.length
+  
   if (isLoading) {
     return (
       <Card>
@@ -81,6 +85,12 @@ export function PreviewTable({
           </p>
         </div>
         <div className="flex items-center gap-2">
+          {selectedCount > 0 && (
+              <Button onClick={onStartCrawl} disabled={isCrawling} size="sm">
+                <Play className="mr-2 h-4 w-4" />
+                Crawl {selectedCount} Selected
+              </Button>
+          )}
           {selectedIds.length > 0 && (
             <span className="text-sm text-muted-foreground">
               {selectedIds.length} selected
@@ -89,10 +99,10 @@ export function PreviewTable({
           <Button
             variant="outline"
             size="sm"
-            onClick={allNewSelected ? onDeselectAll : onSelectAll}
-            disabled={newCount === 0 || isCrawling}
+            onClick={allSelected ? onDeselectAll : onSelectAll}
+            disabled={previews.length === 0 || isCrawling}
           >
-            {allNewSelected ? (
+            {allSelected ? (
               <>
                 <Square className="mr-2 h-4 w-4" />
                 Deselect All
@@ -100,7 +110,7 @@ export function PreviewTable({
             ) : (
               <>
                 <CheckSquare className="mr-2 h-4 w-4" />
-                Select All New
+                Select All
               </>
             )}
           </Button>

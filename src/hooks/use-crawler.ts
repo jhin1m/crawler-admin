@@ -107,12 +107,10 @@ export function useCrawler() {
     )
   }, [])
 
-  // Select all (only new mangas)
+  // Select all
   const selectAll = useCallback(() => {
-    const newMangaIds = previews
-      .filter((p) => !p.exists)
-      .map((p) => p.id!)
-    setSelectedIds(newMangaIds)
+    const allMangaIds = previews.map((p) => p.id!)
+    setSelectedIds(allMangaIds)
   }, [previews])
 
   // Deselect all
@@ -215,13 +213,46 @@ export function useCrawler() {
   }, [previews, selectedIds, config])
 
   // Crawl single manga
+  // Crawl single manga
   const crawlSingle = useCallback(
-    async (manga: MangaPreview) => {
+    async (manga: MangaPreview, selectedChapters?: string[]) => {
+      // Step 1: Initialize job if not provided chapters
+      if (!selectedChapters) {
+        const initialState: CrawlJob = {
+            manga,
+            status: 'preparing',
+            progress: 0,
+            currentStep: 'Fetching chapters...'
+        }
+        setJobs([initialState])
+
+        try {
+            const detail = await clientCrawlerService.fetchMangaDetail(config.source, manga.link)
+            setJobs([{
+                ...initialState,
+                status: 'selecting',
+                chapters: detail.chapters,
+                currentStep: 'Select chapters to crawl'
+            }])
+        } catch (error) {
+            setJobs([{
+                ...initialState,
+                status: 'failed',
+                error: `Failed to load chapters: ${(error as Error).message}`
+            }])
+            toast.error('Failed to load chapters')
+        }
+        return
+      }
+
+      // Step 2: Start actual crawl with selected chapters
+      // We need to find the existing job or create a new one (safe to recreate structure here as we have selectedChapters)
       const job: CrawlJob = {
         manga,
         status: 'crawling',
         progress: 0,
-        currentStep: 'Starting...'
+        currentStep: 'Starting...',
+        selectedChapters // Preserve selected chapters in job state if needed
       }
       setJobs([job])
 
@@ -237,7 +268,8 @@ export function useCrawler() {
               currentStep: progress.message,
               progress: Math.round((progress.current / progress.total) * 100)
             }])
-          }
+          },
+          selectedChapters
         )
 
         setJobs([
