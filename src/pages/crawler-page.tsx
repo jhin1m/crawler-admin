@@ -24,6 +24,7 @@ export function CrawlerPage() {
     deselectAll,
     startCrawl,
     crawlSingle,
+    crawlByUrl,
     clearJobs
   } = useCrawler()
 
@@ -67,6 +68,7 @@ export function CrawlerPage() {
         config={config}
         onConfigChange={updateConfig}
         onFetch={fetchPreview}
+        onCrawlUrl={crawlByUrl}
         isLoading={isLoading}
         disabled={isCrawling}
       />

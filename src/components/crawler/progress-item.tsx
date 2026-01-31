@@ -88,7 +88,7 @@ export function ProgressItem({ job, className, onConfirmCrawl }: ProgressItemPro
         {/* Preparing State */}
         {status === 'preparing' && (
              <div className="flex items-center text-sm text-muted-foreground animate-pulse">
-                <Loader2 className="w-3 h-3 mr-2 animate-spin" /> Fetching chapter list...
+                <Loader2 className="w-3 h-3 mr-2 animate-spin" /> Đang tải danh sách chapter...
              </div>
         )}
 
@@ -96,7 +96,7 @@ export function ProgressItem({ job, className, onConfirmCrawl }: ProgressItemPro
         {status === 'selecting' && chapters && (
             <div className="space-y-3 mt-2">
                 <div className="flex items-center justify-between text-sm">
-                    <span className="text-muted-foreground">{chapters.length} chapters found</span>
+                    <span className="text-muted-foreground">Đã tìm thấy {chapters.length}</span>
                     <Button variant="ghost" size="sm" className="h-6 px-2 text-xs" onClick={toggleAll}>
                         <CheckSquare className="w-3 h-3 mr-1" />
                         {selectedChapters.length === chapters.length ? 'Deselect All' : 'Select All'}
@@ -124,7 +124,7 @@ export function ProgressItem({ job, className, onConfirmCrawl }: ProgressItemPro
                         onClick={() => onConfirmCrawl?.(job, selectedChapters)}
                         disabled={selectedChapters.length === 0}
                     >
-                        <Play className="w-3 h-3 mr-2" /> Start Crawl ({selectedChapters.length})
+                        <Play className="w-3 h-3 mr-2" /> Bắt đầu ({selectedChapters.length})
                     </Button>
                 </div>
             </div>
@@ -154,7 +154,7 @@ export function ProgressItem({ job, className, onConfirmCrawl }: ProgressItemPro
         {/* Success info */}
         {status === 'success' && job.createdMangaId && (
           <p className="text-sm text-green-600 dark:text-green-400">
-            Created manga ID: {job.createdMangaId.slice(0, 8)}...
+            Đã tạo manga với ID: {job.createdMangaId.slice(0, 8)}...
           </p>
         )}
       </div>

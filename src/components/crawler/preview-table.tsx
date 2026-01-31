@@ -47,7 +47,7 @@ export function PreviewTable({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Preview Results</CardTitle>
+          <CardTitle className="text-lg">Kết quả</CardTitle>
         </CardHeader>
         <CardContent>
           <PreviewSkeleton />
@@ -60,14 +60,14 @@ export function PreviewTable({
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="text-lg">Preview Results</CardTitle>
+          <CardTitle className="text-lg">Kết quả</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col items-center justify-center py-12 text-center">
             <Bug className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-medium">No previews yet</h3>
+            <h3 className="text-lg font-medium">Chưa có dữ liệu</h3>
             <p className="text-sm text-muted-foreground">
-              Configure the crawler and click "Fetch Preview" to start
+              Vui lòng chọn nguồn Crawl và click "Bắt đầu" để làm việc.
             </p>
           </div>
         </CardContent>
@@ -162,18 +162,18 @@ export function PreviewTable({
                          <span className="text-xs text-muted-foreground">New / Old</span>
                          <div className="font-medium text-sm">
                             <span className="text-green-600" title="Crawl Source">
-                              {manga.crawlChapterCount ?? '?'}
+                              Chapter {manga.crawlChapterCount ?? '?'}
                             </span>
                             <span className="text-muted-foreground mx-1">/</span>
                             <span className="text-blue-600" title="Database">
-                              {manga.dbChapterCount ?? '?'}
+                              Chapter {manga.dbChapterCount ?? '?'}
                             </span>
                           </div>
                       </div>
                     ) : (
-                      <span>
+                      <span className="font-medium text-sm text-green-600">
                         {manga.crawlChapterCount
-                          ? `${manga.crawlChapterCount} chaps`
+                          ? `Chapter ${manga.crawlChapterCount}`
                           : manga.latestChapter || '-'}
                       </span>
                     )}

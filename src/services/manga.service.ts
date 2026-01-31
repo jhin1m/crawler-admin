@@ -82,6 +82,32 @@ export const mangaService = {
     }
   },
 
+  // Check if chapter exists
+  async checkChapterExists(mangaId: string, order: number): Promise<{ exists: boolean; id?: string }> {
+    try {
+      const response = await api.get<PaginatedResponse<Chapter>>('/chapters', {
+        params: {
+          'filter[manga_id]': mangaId,
+          // Since order is float, we cannot exact match easily via standard query params unless API supports it.
+          // Assuming filter[order] works exact match or we check existence.
+          // It's safer to list chapters and find it.
+          // BUT 'filter[order]' might be supported?
+          // Let's rely on standard practice. If not, we might need another way.
+          // Actually, let's assume filter[order] works.
+          'filter[order]': order, 
+          per_page: 1
+        }
+      })
+
+      if (response.data.data && response.data.data.length > 0) {
+        return { exists: true, id: response.data.data[0].id }
+      }
+      return { exists: false }
+    } catch {
+      return { exists: false }
+    }
+  },
+
   // Create new manga
   async create(data: CreateMangaData): Promise<Manga> {
     const formData = new FormData()

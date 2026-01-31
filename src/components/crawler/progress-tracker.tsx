@@ -42,31 +42,31 @@ export function ProgressTracker({ jobs, onClear, onConfirmCrawl }: ProgressTrack
               {!isComplete ? (
                 <>
                   <Loader2 className="h-5 w-5 animate-spin" />
-                  Crawling Progress
+                  Tiến trình Crawl
                 </>
               ) : hasErrors ? (
                 <>
                   <AlertTriangle className="h-5 w-5 text-yellow-500" />
-                  Crawl Completed with Errors
+                  Tiến trình Crawl có lỗi
                 </>
               ) : (
                 <>
                   <CheckCircle2 className="h-5 w-5 text-green-500" />
-                  Crawl Completed
+                  Crawl thành công
                 </>
               )}
             </CardTitle>
             <CardDescription>
-              {stats.success} succeeded, {stats.failed} failed
+              {stats.success} thành công, {stats.failed} thất bại
               {!isComplete &&
-                ` • ${stats.crawling} active, ${stats.pending} pending`}
+                ` • ${stats.crawling} hoạt động, ${stats.pending} chờ`}
             </CardDescription>
           </div>
 
           {isComplete && (
             <Button variant="outline" size="sm" onClick={onClear}>
               <Trash2 className="mr-2 h-4 w-4" />
-              Clear
+              Xoá
             </Button>
           )}
         </div>
@@ -90,20 +90,20 @@ export function ProgressTracker({ jobs, onClear, onConfirmCrawl }: ProgressTrack
           <div className="flex gap-4">
             <span className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-green-500" />
-              {stats.success} success
+              {stats.success} thành công
             </span>
             <span className="flex items-center gap-1">
               <span className="h-2 w-2 rounded-full bg-red-500" />
-              {stats.failed} failed
+              {stats.failed} thất bại
             </span>
             {!isComplete && (
               <span className="flex items-center gap-1">
                 <span className="h-2 w-2 rounded-full bg-yellow-500 animate-pulse" />
-                {stats.crawling + stats.pending} in progress
+                {stats.crawling + stats.pending} Chờ
               </span>
             )}
           </div>
-          <span>Total: {stats.total}</span>
+          <span>Tổng: {stats.total}</span>
         </div>
       </CardContent>
     </Card>

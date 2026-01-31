@@ -18,6 +18,10 @@ const defaultConfig: CrawlerConfig = {
   endPage: 1
 }
 
+// Cache to store preview results
+const previewCache = new Map<string, { timestamp: number, data: MangaPreview[] }>()
+const CACHE_TTL = 5 * 60 * 1000 // 5 minutes
+
 export function useCrawler() {
   // State
   const [config, setConfig] = useState<CrawlerConfig>(defaultConfig)
@@ -25,26 +29,33 @@ export function useCrawler() {
   const [selectedIds, setSelectedIds] = useState<string[]>([])
   const [jobs, setJobs] = useState<CrawlJob[]>([])
 
-  // Fetch preview mutation - uses client-side scraping
+  // Fetch preview mutation - uses client-side scraping with caching
   const previewMutation = useMutation({
     mutationFn: async () => {
+      const cacheKey = `${config.source}-${config.startPage}-${config.endPage}`
+      const cached = previewCache.get(cacheKey)
+      
+      if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
+        return cached.data
+      }
+
       // Use client-side crawler to fetch and parse HTML directly
       const result = await clientCrawlerService.fetchPreview(
         config.source,
         config.startPage,
         config.endPage
       )
-      return result
-    },
-    onSuccess: async (data) => {
+
       // Add unique IDs to previews
-      const previewsWithIds = data.mangas.map((m) => ({
+      const previewsWithIds = result.mangas.map((m) => ({
         ...m,
         id: crawlerUtils.generateId()
       }))
 
       // Check which mangas already exist
-      toast.info(`Checking ${previewsWithIds.length} mangas in database...`)
+      // Note: We can't use toast inside async function effectively without triggering it immediately, but it's fine.
+      // toast.info(`Checking ${previewsWithIds.length} mangas in database...`)
+      
       const checkedPreviews = await Promise.all(
         previewsWithIds.map(async (preview) => {
           try {
@@ -58,13 +69,16 @@ export function useCrawler() {
                 const detail = await clientCrawlerService.fetchMangaDetail(config.source, preview.link)
                 // Use the highest chapter order found
                 if (detail.chapters.length > 0) {
-                  // Chapters are sorted newest first, so first one should have highest order
-                  // But let's find max just to be safe
-                  crawlChapterCount = Math.max(...detail.chapters.map(c => c.order || 0))
+                     // Try to find status from text first if parser implements it, otherwise max order
+                     // Simple max order
+                     crawlChapterCount = Math.max(...detail.chapters.map(c => c.order || 0))
                 }
-              } catch (e) {
-                console.warn(`Failed to fetch detail for existing manga ${preview.name}`, e)
+              } catch (err) {
+                console.warn('Failed to fetch detail for comparison:', err)
               }
+            } else {
+                 // For new manga, attempt to estimate from list if possible (usually not accurate)
+                 // Just leave undefined or use preview data
             }
 
             return { 
@@ -72,20 +86,29 @@ export function useCrawler() {
               exists, 
               existingId: id,
               dbChapterCount: latestChapterOrder,
-              crawlChapterCount
+              crawlChapterCount: crawlChapterCount || preview.chapterCount 
             }
-          } catch {
-            // If check fails, assume not exists
-            return { ...preview, exists: false, existingId: undefined }
+          } catch (error) {
+            console.error('Error checking exists:', error)
+            return preview
           }
         })
       )
+      
+      // Save to cache
+      previewCache.set(cacheKey, {
+        timestamp: Date.now(),
+        data: checkedPreviews
+      })
 
-      setPreviews(checkedPreviews)
+      return checkedPreviews
+    },
+    onSuccess: (data) => {
+      setPreviews(data)
       setSelectedIds([])
-      const existsCount = checkedPreviews.filter((p) => p.exists).length
-      const newCount = checkedPreviews.length - existsCount
-      toast.success(`Loaded ${checkedPreviews.length} mangas (${newCount} new, ${existsCount} exists)`)
+      const existsCount = data.filter((p) => p.exists).length
+      const newCount = data.length - existsCount
+      toast.success(`Loaded ${data.length} mangas (${newCount} new, ${existsCount} exists)`)
     },
     onError: (error: Error) => {
       toast.error(`Failed to fetch preview: ${error.message}`)
@@ -305,6 +328,85 @@ export function useCrawler() {
     [config]
   )
 
+  // Crawl by URL
+  const crawlByUrl = useCallback(async (url: string) => {
+    // Basic validation
+    if (!url) return
+    
+    // Create placeholder job
+    const tempId = crawlerUtils.generateId()
+    const placeholderManga: MangaPreview = {
+      id: tempId,
+      name: url, // Show URL initially
+      link: url,
+      coverUrl: '',
+    }
+
+    const job: CrawlJob = {
+      manga: placeholderManga,
+      status: 'preparing',
+      progress: 0,
+      currentStep: 'Fetching info...'
+    }
+    
+    // Add to jobs immediately
+    setJobs(prev => [...prev, job])
+
+    try {
+      // Fetch details first to get name and chapters
+      const detail = await clientCrawlerService.fetchMangaDetail(config.source, url)
+      
+      // Check if exists in DB
+      const { exists, id, latestChapterOrder } = await mangaService.checkExists(detail.name)
+
+      // Calculate stats
+      let crawlChapterCount = undefined
+      if (detail.chapters.length > 0) {
+        crawlChapterCount = Math.max(...detail.chapters.map(c => c.order || 0))
+      }
+
+      // Update the job with real details and move to selecting
+      const realManga: MangaPreview = {
+        ...placeholderManga,
+        name: detail.name,
+        nameAlt: detail.nameAlt,
+        coverUrl: detail.coverUrl,
+        chapterCount: detail.chapters.length,
+        exists,
+        existingId: id,
+        dbChapterCount: latestChapterOrder,
+        crawlChapterCount
+      }
+
+      setJobs(prev => prev.map(j => 
+        j.manga.id === tempId 
+          ? { 
+              ...j, 
+              manga: realManga,
+              status: 'selecting',
+              chapters: detail.chapters,
+              currentStep: 'Select chapters to crawl'
+            }
+          : j
+      ))
+      
+      // Also add to previews list if not there? Optional.
+      // Maybe not needed if we are just crawling specific URL.
+
+    } catch (error) {
+       setJobs(prev => prev.map(j => 
+        j.manga.id === tempId 
+          ? { 
+              ...j, 
+              status: 'failed',
+              error: (error as Error).message
+            }
+          : j
+      ))
+      toast.error(`Failed to load manga: ${(error as Error).message}`)
+    }
+  }, [config])
+
   // Clear jobs
   const clearJobs = useCallback(() => {
     setJobs([])
@@ -344,6 +446,7 @@ export function useCrawler() {
     deselectAll,
     startCrawl,
     crawlSingle,
+    crawlByUrl,
     clearJobs,
     resetPreviews
   }

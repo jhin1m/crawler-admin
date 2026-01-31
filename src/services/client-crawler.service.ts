@@ -238,7 +238,19 @@ export async function clientCrawlManga(
       message: `Processing chapter ${i + 1}/${totalChapters}: ${chapterInfo.name}`
     })
 
+    // Check if chapter exists
     try {
+      const { exists } = await mangaService.checkChapterExists(mangaId!, chapterInfo.order || 0)
+      if (exists) {
+        onProgress?.({
+          step: 'skip_chapter',
+          current: i + 1,
+          total: totalChapters,
+          message: `Chapter ${chapterInfo.name} exists. Skipping...`
+        })
+        continue
+      }
+
       // Create chapter
       const chapter = await mangaService.createChapter({
         name: chapterInfo.name,
