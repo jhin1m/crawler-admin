@@ -126,7 +126,7 @@ export function PreviewTable({
                     <Checkbox
                       checked={selectedIds.includes(manga.id!)}
                       onCheckedChange={() => onToggleSelect(manga.id!)}
-                      disabled={manga.exists || isCrawling}
+                      disabled={isCrawling}
                     />
                   </TableCell>
                   <TableCell>
@@ -147,9 +147,26 @@ export function PreviewTable({
                     </div>
                   </TableCell>
                   <TableCell>
-                    {manga.chapterCount
-                      ? `${manga.chapterCount} chaps`
-                      : manga.latestChapter || '-'}
+                    {manga.exists ? (
+                      <div className="flex flex-col space-y-0.5">
+                         <span className="text-xs text-muted-foreground">New / Old</span>
+                         <div className="font-medium text-sm">
+                            <span className="text-green-600" title="Crawl Source">
+                              {manga.crawlChapterCount ?? '?'}
+                            </span>
+                            <span className="text-muted-foreground mx-1">/</span>
+                            <span className="text-blue-600" title="Database">
+                              {manga.dbChapterCount ?? '?'}
+                            </span>
+                          </div>
+                      </div>
+                    ) : (
+                      <span>
+                        {manga.crawlChapterCount
+                          ? `${manga.crawlChapterCount} chaps`
+                          : manga.latestChapter || '-'}
+                      </span>
+                    )}
                   </TableCell>
                   <TableCell>
                     <StatusBadge exists={manga.exists ?? false} />
@@ -159,7 +176,7 @@ export function PreviewTable({
                       variant="outline"
                       size="sm"
                       onClick={() => onCrawlSingle(manga)}
-                      disabled={manga.exists || isCrawling}
+                      disabled={isCrawling}
                     >
                       {isCrawling ? (
                         <Loader2 className="h-4 w-4 animate-spin" />

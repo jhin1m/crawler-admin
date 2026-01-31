@@ -19,6 +19,7 @@ export interface CreateMangaData {
   artist_id?: string
   group_id?: string
   status?: string
+  description?: string
   cover?: File
   genres?: number[]
 }
@@ -89,6 +90,7 @@ export const mangaService = {
     if (data.artist_id) formData.append('artist_id', data.artist_id)
     if (data.group_id) formData.append('group_id', data.group_id)
     if (data.status) formData.append('status', data.status)
+    if (data.description) formData.append('description', data.description)
     if (data.cover) formData.append('cover', data.cover)
     if (data.genres) {
       data.genres.forEach((g, i) => formData.append(`genres[${i}]`, String(g)))
