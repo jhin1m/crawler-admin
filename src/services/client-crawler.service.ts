@@ -15,8 +15,10 @@ import {
   getCrawler, 
   fetchWithCorsProxy, 
   downloadImage, 
-  pbkdf2Async 
+  pbkdf2Async,
+  generateSlug
 } from './crawlers'
+import { genreService } from '@/services/genre.service'
 
 /**
  * Fetch and parse manga list from source
@@ -133,6 +135,48 @@ export async function clientCrawlManga(
       }
     }
 
+    // Process genres
+    const genreIds: number[] = []
+    if (detail.genres && detail.genres.length > 0) {
+      onProgress?.({
+        step: 'process_genres',
+        current: 0,
+        total: detail.genres.length,
+        message: 'Processing genres...'
+      })
+
+      try {
+        // Fetch all existing genres first
+        // Note: For better performance in production, we might want to cache this or use a search endpoint
+        // But since we need exact matching and creation, fetching all is safer for now (assuming not huge amount of genres)
+        const allGenresResponse = await genreService.list({ perPage: 1000 })
+        const allGenres = allGenresResponse.data
+
+        for (const genreName of detail.genres) {
+          if (!genreName.trim()) continue
+
+          // Check if genre exists
+          let genre = await genreService.findByName(genreName, allGenres)
+          
+          if (!genre) {
+            // Create new genre
+            try {
+              const slug = generateSlug(genreName)
+              genre = await genreService.create({ name: genreName, slug })
+            } catch (e) {
+               console.warn(`Failed to create genre: ${genreName}`, e)
+            }
+          }
+
+          if (genre) {
+            genreIds.push(genre.id)
+          }
+        }
+      } catch (e) {
+        console.warn('Failed to process genres', e)
+      }
+    }
+
     onProgress?.({
       step: 'create_manga',
       current: 0,
@@ -145,8 +189,8 @@ export async function clientCrawlManga(
       name_alt: detail.nameAlt,
       status: String(detail.status || 2), // 1: Completed, 2: Ongoing
       description: detail.pilot,
-      cover: coverBlob ? new File([coverBlob], 'cover.jpg', { type: 'image/jpeg' }) : undefined
-      // Note: genres would need to be matched to existing genre IDs
+      cover: coverBlob ? new File([coverBlob], 'cover.jpg', { type: 'image/jpeg' }) : undefined,
+      genres: genreIds
     })
     mangaId = manga.id
   } else {
