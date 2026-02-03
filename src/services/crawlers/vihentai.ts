@@ -24,52 +24,50 @@ export class ViHentaiCrawler implements CrawlerImplementation {
 
     const mangas: MangaPreview[] = []
     
-    // Pattern: <a href="/truyen/{slug}">Tên truyện</a>
-    const links = doc.querySelectorAll('a[href*="/truyen/"]')
+    // Pattern: div.manga-vertical
+    const items = doc.querySelectorAll('.manga-vertical')
     
-    links.forEach((linkEl) => {
-      const href = linkEl.getAttribute('href') || ''
-      const name = linkEl.textContent?.trim() || ''
+    items.forEach((item) => {
+      // Name & Link
+      const linkEl = item.querySelector('a.text-ellipsis')
+      const name = linkEl?.textContent?.trim() || ''
+      const href = linkEl?.getAttribute('href') || ''
 
-      // Skip invalid or chapter links (PHP regex: /\/(truyen\/[^\/]+)\//)
-      // Basically, if it has more than one slash after 'truyen', it's likely a chapter or something else deep
-      if (!name || href.match(/\/truyen\/[^/]+\//)) {
+      // Skip invalid or chapter links
+      if (!name || href.includes('/chap-')) {
         return
       }
-
-      // Check for main manga link format: /truyen/{slug}
-      // PHP regex: /^\/truyen\/([^\/]+)$/
-       const match = href.match(/\/truyen\/([^/]+)$/)
+      
+      const match = href.match(/\/truyen\/([^/]+)$/)
       if (match) {
-        // Try to find cover image if possible in list view
+        // Cover Image is in style attribute of div.cover
         let coverUrl = ''
-        // Look in parent containers for image
-        // Usually list items are wrapped in a container
-        const container = linkEl.closest('div') || linkEl.parentElement
-        if (container) {
-          const img = container.querySelector('img')
-          if (img) {
-             coverUrl = img.getAttribute('data-src') || img.getAttribute('src') || ''
-             // Handle relative URLs or background styles if needed
-             // Based on PHP details parser, cover might be in style background-image
-             if (!coverUrl) {
-                const style = container.getAttribute('style') || ''
-                const bgMatch = style.match(/url\(['"]?(.*?)?['"]?\)/)
-                if (bgMatch) coverUrl = bgMatch[1]
-             }
-          }
+        const coverDiv = item.querySelector('.cover')
+        if (coverDiv) {
+            const style = coverDiv.getAttribute('style') || ''
+            const matches = style.match(/url\(['"]?(.*?)?['"]?\)/)
+            if (matches) {
+                coverUrl = matches[1]
+            }
         }
-        
+
         // Correct cover URL if relative
         if (coverUrl && !coverUrl.startsWith('http')) {
             coverUrl = `${this.baseUrl}${coverUrl.startsWith('/') ? '' : '/'}${coverUrl}`
+        }
+
+        // Latest Chapter
+        let latestChapter = ''
+        const chapterLink = item.querySelector('.latest-chapter a')
+        if (chapterLink) {
+            latestChapter = chapterLink.textContent?.trim() || ''
         }
 
         mangas.push({
           name,
           link: href.startsWith('http') ? href : `${this.baseUrl}${href.startsWith('/') ? '' : '/'}${href}`,
           coverUrl,
-          latestChapter: '' // Not easily available without more specific selectors
+          latestChapter
         })
       }
     })

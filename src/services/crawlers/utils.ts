@@ -3,7 +3,54 @@ import { configService } from '../config.service'
 /**
  * Fetch HTML content through CORS proxy
  */
+/**
+ * Fetch HTML content through CORS proxy
+ */
 export async function fetchWithCorsProxy(url: string): Promise<string> {
+  const mode = configService.getProxyMode()
+  
+  // Direct fetch (No Proxy)
+  if (mode === 'none') {
+    try {
+      const response = await fetch(url, {
+        method: 'GET',
+        headers: {
+          Accept: 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8'
+        }
+      })
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+      return await response.text()
+    } catch (error) {
+      console.error('Direct fetch failed:', error)
+      throw error
+    }
+  }
+
+  // HTTP Proxy (Pure) - Not supported directly in browser
+  // HTTP Proxy (Pure) - Not supported directly in browser
+  if (mode === 'http') {
+    const proxies = configService.getHttpProxies()
+    console.warn('HTTP Proxy mode enabled but client-side browser fetch cannot use it directly. Using direct fetch as fallback (or failing).')
+    
+    // We can try to loop, but if the environment doesn't support it, all will fail identically.
+    // However, for structure consistency:
+    for (const proxy of proxies) {
+       try {
+        // Warning: This fetch is still DIRECT unless a service worker or backend intercepts it.
+        // We log the proxy we INTEND to use.
+        console.log(`Attempting via HTTP proxy: ${proxy}`) 
+        const response = await fetch(url)
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+        return await response.text()
+       } catch (error) {
+         console.warn(`HTTP proxy ${proxy} attempt failed (likely unsupported):`, error)
+         continue
+       }
+    }
+    throw new Error('HTTP Proxies cannot be used directly in the browser. Please switch to "CORS Proxies" mode or implement Backend crawling.')
+  }
+
+  // CORS Proxy (Default)
   let lastError: Error | null = null
   const proxies = configService.getCorsProxies()
 
@@ -36,6 +83,39 @@ export async function fetchWithCorsProxy(url: string): Promise<string> {
  * Download image as blob via CORS proxy
  */
 export async function downloadImage(url: string): Promise<Blob> {
+  const mode = configService.getProxyMode()
+
+  if (mode === 'none') {
+    try {
+      const response = await fetch(url)
+      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+      const blob = await response.blob()
+      if (blob.size < 100) throw new Error('Image too small, likely invalid')
+      return blob
+    } catch (error) {
+       console.error('Direct download failed:', error)
+       throw error
+    }
+  }
+
+  if (mode === 'http') {
+     const proxies = configService.getHttpProxies()
+     console.warn('HTTP Proxy mode enabled but client-side browser fetch cannot use it directly.')
+     
+     for (const proxy of proxies) {
+       try {
+         console.log(`Attempting image DL via HTTP proxy: ${proxy}`)
+         const response = await fetch(url)
+         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`)
+         return await response.blob()
+       } catch (error) {
+         console.warn(`HTTP proxy ${proxy} image DL failed:`, error)
+         continue
+       }
+     }
+     throw new Error('All HTTP proxies failed for image download.')
+  }
+
   const proxies = configService.getCorsProxies()
   for (const proxy of proxies) {
     try {

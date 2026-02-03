@@ -1,4 +1,6 @@
 
+export type ProxyMode = 'cors' | 'http' | 'none'
+
 export interface AppConfig {
   crawlers: {
     vinaHeantai: {
@@ -14,7 +16,9 @@ export interface AppConfig {
       baseUrl: string
     }
   }
+  proxyMode: ProxyMode
   corsProxies: string[]
+  httpProxies: string[]
 }
 
 const DEFAULT_CONFIG: AppConfig = {
@@ -32,11 +36,13 @@ const DEFAULT_CONFIG: AppConfig = {
       baseUrl: 'https://vi-hentai.moe'
     }
   },
+  proxyMode: 'cors',
   corsProxies: [
     'https://api.codetabs.com/v1/proxy?quest=',
     'https://api.cors.lol/?url=',
     'https://cors-anywhere.com/'
-  ]
+  ],
+  httpProxies: []
 }
 
 const STORAGE_KEY = 'app_config_v1'
@@ -46,7 +52,13 @@ export const configService = {
     try {
       const stored = localStorage.getItem(STORAGE_KEY)
       if (stored) {
-        return { ...DEFAULT_CONFIG, ...JSON.parse(stored) }
+        // Migration: config might have old fields, ensure types are correct
+        const parsed = JSON.parse(stored)
+        if (parsed.httpProxy && !parsed.httpProxies) {
+           parsed.httpProxies = [parsed.httpProxy]
+           delete parsed.httpProxy
+        }
+        return { ...DEFAULT_CONFIG, ...parsed }
       }
     } catch (e) {
       console.error('Failed to load config', e)
@@ -79,7 +91,15 @@ export const configService = {
     return this.getConfig().crawlers.viHentai.baseUrl
   },
 
+  getProxyMode() {
+    return this.getConfig().proxyMode
+  },
+
   getCorsProxies() {
     return this.getConfig().corsProxies
+  },
+
+  getHttpProxies() {
+    return this.getConfig().httpProxies
   }
 }
