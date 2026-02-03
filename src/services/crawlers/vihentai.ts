@@ -8,7 +8,7 @@ export class ViHentaiCrawler implements CrawlerImplementation {
   get baseUrl() {
     return configService.getViHentaiUrl()
   }
-  listPath = '/danh-sach?page='
+  listPath = 'danh-sach?page='
 
   isMatch(url: string): boolean {
     return url.includes('vi-hentai')

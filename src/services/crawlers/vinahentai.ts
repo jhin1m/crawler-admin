@@ -202,21 +202,64 @@ export class VinaHentaiCrawler implements CrawlerImplementation {
   }
 
   async parseChapterImages(html: string): Promise<string[]> {
-    // Regex based extraction as per PHP reference
-    const regex = /https:\/\/cdn\.vinahentai\.fun\/[^"'\s\\]+?\.(?:jpg|jpeg|png|webp)/g
-    const matches = html.match(regex) || []
-    
-    if (matches.length > 0) {
-      // Filter unique
-      // Filter unique and remove unwanted images (like backgrounds)
-      return Array.from(new Set(matches)).filter(url => 
-        !url.includes('avatar-uploads/bg/') && 
-        !url.includes('bg%20body%20chuan')
-      )
+    const parser = new DOMParser()
+    const doc = parser.parseFromString(html, 'text/html')
+    let images: string[] = []
+
+    // 1. Try to extract from window.__reactRouterContext script
+    // This is the most reliable way as it contains the full pre-rendered state
+    const scripts = doc.querySelectorAll('script')
+    for (const script of Array.from(scripts)) {
+      if (script.textContent?.includes('window.__reactRouterContext')) {
+        try {
+          // Extract the JSON object
+          const content = script.textContent
+          const jsonStart = content.indexOf('{')
+          const jsonEnd = content.lastIndexOf('}')
+          if (jsonStart !== -1 && jsonEnd !== -1) {
+            const jsonStr = content.substring(jsonStart, jsonEnd + 1)
+            // The object structure is complex, so we'll do a regex search for image URLs in the JSON string
+            // Looking for URLs that contain /manga-images/
+            const urlMatches = jsonStr.match(/https:\\\/\\\/cdn\.vinahentai\.fun\\\/manga-images\\\/[^"'\\]+/g)
+            if (urlMatches) {
+               images = urlMatches.map(url => url.replace(/\\\//g, '/'))
+            }
+          }
+        } catch (e) {
+          console.warn('VinaHentai: Failed to parse React context', e)
+        }
+        if (images.length > 0) break
+      }
     }
 
-    // Fallback? PHP code says "Extract images directly from source (handling lazy load/script tags)"
-    // The regex above was the primary method.
-    return []
+    // 2. Fallback: DOM Parsing with strict selectors
+    if (images.length === 0) {
+      // Correct selector for the chapter images container
+      // Using the specific classes we found: relative z-0 -mx-4 my-6 flex flex-col items-center justify-center
+      // OR selecting images with alt="Chapter ..." which is very distinct
+      const imgNodes = doc.querySelectorAll('div.flex.flex-col.items-center.justify-center img[alt*="Chapter"], .container-page img:not(a img)')
+      
+      imgNodes.forEach((node) => {
+        // Priority: data-src (lazy) -> src
+        let imgUrl = node.getAttribute('data-src') || node.getAttribute('src') || ''
+        
+        // Validation:
+        // 1. Must use cdn.vinahentai.fun
+        // 2. Must contain /manga-images/
+        // 3. Must NOT be a poster or story-image
+        if (imgUrl && imgUrl.includes('vinahentai.fun') && imgUrl.includes('/manga-images/') && !imgUrl.includes('poster')) {
+             images.push(imgUrl.trim())
+        }
+      })
+    }
+    
+    // 3. Last Resort: Global regex scan but strictly filtered
+    if (images.length === 0) {
+      const regex = /https:\/\/cdn\.vinahentai\.fun\/manga-images\/[^"'\s\\]+?\.(?:jpg|jpeg|png|webp)/g
+      const matches = html.match(regex) || []
+      images = Array.from(matches)
+    }
+
+    return Array.from(new Set(images))
   }
 }
