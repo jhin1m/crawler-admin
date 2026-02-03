@@ -236,7 +236,6 @@ export function useCrawler() {
   }, [previews, selectedIds, config])
 
   // Crawl single manga
-  // Crawl single manga
   const crawlSingle = useCallback(
     async (manga: MangaPreview, selectedChapters?: string[]) => {
       // Step 1: Initialize job if not provided chapters
@@ -247,37 +246,109 @@ export function useCrawler() {
             progress: 0,
             currentStep: 'Fetching chapters...'
         }
-        setJobs([initialState])
+        setJobs(prev => {
+            const existing = prev.findIndex(j => j.manga.id === manga.id)
+            if (existing !== -1) return prev.map((j, i) => i === existing ? initialState : j)
+            return [...prev, initialState]
+        })
 
         try {
             const detail = await clientCrawlerService.fetchMangaDetail(config.source, manga.link)
-            setJobs([{
-                ...initialState,
-                status: 'selecting',
-                chapters: detail.chapters,
-                currentStep: 'Select chapters to crawl'
-            }])
+            setJobs(prev => prev.map(j => 
+                j.manga.id === manga.id 
+                ? {
+                    ...j,
+                    status: 'selecting',
+                    chapters: detail.chapters,
+                    currentStep: 'Select chapters to crawl'
+                  }
+                : j
+            ))
         } catch (error) {
-            setJobs([{
-                ...initialState,
-                status: 'failed',
-                error: `Failed to load chapters: ${(error as Error).message}`
-            }])
+            setJobs(prev => prev.map(j => 
+                j.manga.id === manga.id 
+                ? {
+                    ...j,
+                    status: 'failed',
+                    error: `Failed to load chapters: ${(error as Error).message}`
+                  }
+                : j
+            ))
             toast.error('Failed to load chapters')
         }
         return
       }
 
+      // Check if we need to show preview (only for single chapter)
+      // Find current job to check status
+      const currentJob = jobs.find(j => j.manga.id === manga.id)
+      const isPreviewing = currentJob?.status === 'previewing'
+      
+      if (selectedChapters.length === 1 && !isPreviewing) {
+        // Start Preview Flow
+        const chapterName = selectedChapters[0]
+        const chapter = currentJob?.chapters?.find(c => c.name === chapterName)
+        
+        if (!chapter) {
+            toast.error('Chapter info not found')
+            return
+        }
+
+        setJobs(prev => prev.map(j => 
+            j.manga.id === manga.id 
+            ? {
+                ...j,
+                status: 'preparing', // Brief loading state
+                currentStep: 'Fetching chapter images preview...'
+              }
+            : j
+        ))
+
+        try {
+            const images = await clientCrawlerService.fetchChapterImages(config.source, chapter.link)
+            
+            setJobs(prev => prev.map(j => 
+                j.manga.id === manga.id 
+                ? {
+                    ...j,
+                    status: 'previewing',
+                    previewImages: images,
+                    selectedChapters, // Store selected chapters
+                    currentStep: `Ready to crawl ${images.length} images`
+                  }
+                : j
+            ))
+        } catch (error) {
+            setJobs(prev => prev.map(j => 
+                j.manga.id === manga.id 
+                ? {
+                    ...j,
+                    status: 'failed',
+                    error: `Failed to fetch images: ${(error as Error).message}`
+                  }
+                : j
+            ))
+            toast.error('Failed to fetch preview images')
+        }
+        return
+      }
+
       // Step 2: Start actual crawl with selected chapters
-      // We need to find the existing job or create a new one (safe to recreate structure here as we have selectedChapters)
       const job: CrawlJob = {
         manga,
         status: 'crawling',
         progress: 0,
         currentStep: 'Starting...',
-        selectedChapters // Preserve selected chapters in job state if needed
+        selectedChapters,
+        previewImages: currentJob?.previewImages, // Keep preview images if they exist
+        currentImageIndex: -1 // Reset image index
       }
-      setJobs([job])
+      
+      setJobs(prev => {
+          const existing = prev.findIndex(j => j.manga.id === manga.id)
+          if (existing !== -1) return prev.map((j, i) => i === existing ? job : j)
+          return [...prev, job]
+      })
 
       try {
         const result = await clientCrawlerService.crawlManga(
@@ -286,24 +357,33 @@ export function useCrawler() {
           manga.link,
           (progress: CrawlProgress) => {
             // Update job with progress info
-            setJobs([{
-              ...job,
-              currentStep: progress.message,
-              progress: Math.round((progress.current / progress.total) * 100)
-            }])
+            setJobs(prev => prev.map(j => 
+                j.manga.id === manga.id 
+                ? {
+                    ...j,
+                    currentStep: progress.message,
+                    progress: Math.round((progress.current / progress.total) * 100),
+                    // If uploading/processing images, update index
+                    currentImageIndex: progress.step === 'upload_image' ? progress.current - 1 : j.currentImageIndex
+                  }
+                : j
+            ))
           },
           selectedChapters
         )
 
-        setJobs([
-          {
-            ...job,
-            status: 'success',
-            progress: 100,
-            createdMangaId: result.mangaId,
-            currentStep: `Done: ${result.chaptersCreated} chapters`
-          }
-        ])
+        setJobs(prev => prev.map(j => 
+            j.manga.id === manga.id 
+            ? {
+                ...j,
+                status: 'success',
+                progress: 100,
+                createdMangaId: result.mangaId,
+                currentStep: `Done: ${result.chaptersCreated} chapters`,
+                currentImageIndex: (j.previewImages?.length || 0) // Mark all as done
+              }
+            : j
+        ))
 
         setPreviews((prev) =>
           prev.map((p) =>
@@ -315,17 +395,19 @@ export function useCrawler() {
 
         toast.success(`Crawled: ${manga.name}`)
       } catch (error) {
-        setJobs([
-          {
-            ...job,
-            status: 'failed',
-            error: (error as Error).message
-          }
-        ])
+        setJobs(prev => prev.map(j => 
+            j.manga.id === manga.id 
+            ? {
+                ...j,
+                status: 'failed',
+                error: (error as Error).message
+              }
+            : j
+        ))
         toast.error(`Failed: ${(error as Error).message}`)
       }
     },
-    [config]
+    [config, jobs]
   )
 
   // Crawl by URL

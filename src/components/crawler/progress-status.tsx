@@ -1,4 +1,4 @@
-import { CheckCircle2, XCircle, Loader2, Clock } from 'lucide-react'
+import { CheckCircle2, XCircle, Loader2, Clock, Eye } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
 import type { CrawlStatus } from '@/types/crawler.types'
 import { cn } from '@/lib/utils'
@@ -46,6 +46,11 @@ const statusConfig: Record<
     icon: XCircle,
     label: 'Failed',
     color: 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400'
+  },
+  previewing: {
+    icon: Eye,
+    label: 'Previewing',
+    color: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400'
   }
 }
 

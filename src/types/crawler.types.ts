@@ -1,6 +1,6 @@
 export type CrawlerSource = 'truyenvn' | 'vyvy'
 export type StorageType = 's3' | 'hotlink'
-export type CrawlStatus = 'idle' | 'pending' | 'preparing' | 'selecting' | 'crawling' | 'success' | 'failed'
+export type CrawlStatus = 'idle' | 'pending' | 'preparing' | 'selecting' | 'previewing' | 'crawling' | 'success' | 'failed'
 
 export interface CrawlerConfig {
   source: CrawlerSource
@@ -51,6 +51,8 @@ export interface CrawlJob {
   createdMangaId?: string
   chapters?: ChapterInfo[]
   selectedChapters?: string[]
+  previewImages?: string[]
+  currentImageIndex?: number
 }
 
 export interface CrawlerState {

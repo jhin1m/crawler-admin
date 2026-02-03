@@ -1,4 +1,4 @@
-import { Bug, CheckSquare, Square, Loader2, Play } from 'lucide-react'
+import { Bug, CheckSquare, Square, Loader2, Play, ExternalLink } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Checkbox } from '@/components/ui/checkbox'
@@ -79,9 +79,9 @@ export function PreviewTable({
     <Card>
       <CardHeader className="flex flex-row items-center justify-between">
         <div>
-          <CardTitle className="text-lg">Preview Results</CardTitle>
+          <CardTitle className="text-lg">Kết quả</CardTitle>
           <p className="text-sm text-muted-foreground">
-            {previews.length} mangas found ({newCount} new)
+            {previews.length} truyện được tìm thấy ({newCount} truyện mới)
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -143,12 +143,25 @@ export function PreviewTable({
                     <MangaCover
                       src={manga.coverUrl}
                       alt={manga.name}
-                      className="h-16 w-12"
+                      className="h-24 w-18"
                     />
                   </TableCell>
                   <TableCell>
                     <div>
-                      <p className="font-medium line-clamp-1">{manga.name}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium line-clamp-1" title={manga.name}>
+                          {manga.name}
+                        </p>
+                        <a
+                          href={manga.link}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-primary transition-colors flex-shrink-0"
+                          title="Open source link"
+                        >
+                          <ExternalLink className="h-4 w-4" />
+                        </a>
+                      </div>
                       {manga.nameAlt && (
                         <p className="text-sm text-muted-foreground line-clamp-1">
                           {manga.nameAlt}
@@ -158,18 +171,45 @@ export function PreviewTable({
                   </TableCell>
                   <TableCell>
                     {manga.exists ? (
-                      <div className="flex flex-col space-y-0.5">
-                         <span className="text-xs text-muted-foreground">New / Old</span>
-                         <div className="font-medium text-sm">
-                            <span className="text-green-600" title="Crawl Source">
-                              Chapter {manga.crawlChapterCount ?? '?'}
-                            </span>
-                            <span className="text-muted-foreground mx-1">/</span>
-                            <span className="text-blue-600" title="Database">
-                              Chapter {manga.dbChapterCount ?? '?'}
-                            </span>
-                          </div>
-                      </div>
+                      (() => {
+                          const crawlCount = manga.crawlChapterCount ?? 0
+                          const dbCount = manga.dbChapterCount ?? 0
+                          const isNew = crawlCount > dbCount
+                          const isSame = crawlCount === dbCount
+
+                          return (
+                            <div className="flex flex-col space-y-0.5">
+                                <span className="text-xs text-muted-foreground">New / Old</span>
+                                <div className="font-medium text-sm">
+                                    <span
+                                        className={
+                                            isSame
+                                                ? 'text-muted-foreground'
+                                                : isNew
+                                                ? 'text-green-600'
+                                                : 'text-red-600'
+                                        }
+                                        title="Crawl Source"
+                                    >
+                                        Chapter {manga.crawlChapterCount ?? '?'}
+                                    </span>
+                                    <span className="text-muted-foreground mx-1">/</span>
+                                    <span
+                                        className={
+                                            isSame
+                                                ? 'text-muted-foreground'
+                                                : isNew
+                                                ? 'text-red-600'
+                                                : 'text-green-600'
+                                        }
+                                        title="Database"
+                                    >
+                                        Chapter {manga.dbChapterCount ?? '?'}
+                                    </span>
+                                </div>
+                            </div>
+                          )
+                      })()
                     ) : (
                       <span className="font-medium text-sm text-green-600">
                         {manga.crawlChapterCount
@@ -191,7 +231,10 @@ export function PreviewTable({
                       {isCrawling ? (
                         <Loader2 className="h-4 w-4 animate-spin" />
                       ) : (
-                        'Crawl'
+                        <>
+                            <Play className="mr-2 h-4 w-4" />
+                            Crawl
+                        </>
                       )}
                     </Button>
                   </TableCell>

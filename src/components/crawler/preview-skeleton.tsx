@@ -30,7 +30,7 @@ export function PreviewSkeleton() {
               <Skeleton className="h-4 w-4" />
             </TableCell>
             <TableCell>
-              <Skeleton className="h-16 w-12 rounded" />
+              <Skeleton className="h-24 w-18 rounded" />
             </TableCell>
             <TableCell>
               <div className="space-y-2">

@@ -139,7 +139,7 @@ export async function aesDecryptAsync(
     const decrypted = await crypto.subtle.decrypt(
       {
         name: 'AES-CBC',
-        iv: iv
+        iv: iv as unknown as BufferSource
       },
       cryptoKey,
       ciphertextBytes
