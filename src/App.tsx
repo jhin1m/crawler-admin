@@ -5,6 +5,7 @@ import { MainLayout } from '@/components/layout'
 import { LoginPage } from '@/pages/login-page'
 import { DashboardPage } from '@/pages/dashboard-page'
 import { CrawlerPage } from '@/pages/crawler-page'
+import { ConfigurationPage } from '@/pages/configuration-page'
 
 function App() {
   return (
@@ -24,6 +25,7 @@ function App() {
         <Route element={<MainLayout />}>
           <Route path="/dashboard" element={<DashboardPage />} />
           <Route path="/crawl" element={<CrawlerPage />} />
+          <Route path="/configuration" element={<ConfigurationPage />} />
         </Route>
       </Route>
 

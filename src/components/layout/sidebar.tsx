@@ -1,4 +1,4 @@
-import { LayoutDashboard, Bug, X } from 'lucide-react'
+import { LayoutDashboard, Bug, X, Settings } from 'lucide-react'
 import { NavLink } from './nav-link'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
@@ -11,6 +11,7 @@ interface SidebarProps {
 const navItems = [
   { to: '/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/crawl', icon: Bug, label: 'Crawler' },
+  { to: '/configuration', icon: Settings, label: 'Configuration' },
   // Phase 2 items (disabled or hidden for now)
   // { to: '/mangas', icon: BookOpen, label: 'Mangas' },
   // { to: '/chapters', icon: FileText, label: 'Chapters' },

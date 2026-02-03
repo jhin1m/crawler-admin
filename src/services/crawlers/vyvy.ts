@@ -1,10 +1,13 @@
 import type { CrawlerImplementation } from './crawler.interface'
 import type { MangaPreview, MangaDetail, ChapterInfo } from '@/types/crawler.types'
 import { generateSlug, parseChapterNumber, pbkdf2Async, aesDecryptAsync } from './utils'
+import { configService } from '../config.service'
 
 export class VyvyCrawler implements CrawlerImplementation {
   name = 'VyvyComi'
-  baseUrl = 'https://vivicomi14.info'
+  get baseUrl() {
+    return configService.getVyvyUrl()
+  }
   listPath = '/the-loai/18/?page='
 
   isMatch(url: string): boolean {

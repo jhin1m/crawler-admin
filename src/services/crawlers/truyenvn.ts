@@ -1,10 +1,13 @@
 import type { CrawlerImplementation } from './crawler.interface'
 import type { MangaPreview, MangaDetail, ChapterInfo } from '@/types/crawler.types'
 import { generateSlug, parseChapterNumber } from './utils'
+import { configService } from '../config.service'
 
 export class TruyenVnCrawler implements CrawlerImplementation {
   name = 'TruyenVN'
-  baseUrl = 'https://truyenvn.shop'
+  get baseUrl() {
+    return configService.getTruyenVnUrl()
+  }
   listPath = '/the-loai/truyen-tranh-18/page/'
 
   isMatch(url: string): boolean {

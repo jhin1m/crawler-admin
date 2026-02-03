@@ -1,10 +1,13 @@
 import type { CrawlerImplementation } from './crawler.interface'
 import type { MangaPreview, MangaDetail, ChapterInfo } from '@/types/crawler.types'
 import { generateSlug, parseChapterNumber } from './utils'
+import { configService } from '../config.service'
 
 export class VinaHentaiCrawler implements CrawlerImplementation {
   name = 'VinaHentai'
-  baseUrl = 'https://vinahentai.fun'
+  get baseUrl() {
+    return configService.getVinaHentaiUrl()
+  }
   listPath = '/danh-sach?page='
 
   isMatch(url: string): boolean {

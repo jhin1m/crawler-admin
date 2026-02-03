@@ -1,18 +1,13 @@
-// CORS Proxy URLs - use multiple for fallback
-const CORS_PROXIES = [
-  'https://api.codetabs.com/v1/proxy?quest=',
-  'https://api.cors.lol/?url=',
-  'https://cors-anywhere.com/',
-
-]
+import { configService } from '../config.service'
 
 /**
  * Fetch HTML content through CORS proxy
  */
 export async function fetchWithCorsProxy(url: string): Promise<string> {
   let lastError: Error | null = null
+  const proxies = configService.getCorsProxies()
 
-  for (const proxy of CORS_PROXIES) {
+  for (const proxy of proxies) {
     try {
       const proxyUrl = `${proxy}${encodeURIComponent(url)}`
       const response = await fetch(proxyUrl, {
@@ -41,7 +36,8 @@ export async function fetchWithCorsProxy(url: string): Promise<string> {
  * Download image as blob via CORS proxy
  */
 export async function downloadImage(url: string): Promise<Blob> {
-  for (const proxy of CORS_PROXIES) {
+  const proxies = configService.getCorsProxies()
+  for (const proxy of proxies) {
     try {
       const proxyUrl = `${proxy}${encodeURIComponent(url)}`
       const response = await fetch(proxyUrl)
