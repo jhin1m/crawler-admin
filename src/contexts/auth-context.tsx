@@ -1,6 +1,6 @@
 import { createContext, useContext, useState, useEffect, useCallback, type ReactNode } from 'react'
 import { authService } from '@/services/auth.service'
-import type { AuthUser, LoginCredentials, AuthContextValue, AuthState } from '@/types/auth.types'
+import type { LoginCredentials, AuthContextValue, AuthState } from '@/types/auth.types'
 import { AUTH_TOKEN_KEY } from '@/lib/constants'
 
 const initialState: AuthState = {
