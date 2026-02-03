@@ -1,6 +1,6 @@
 import type { CrawlerImplementation } from './crawler.interface'
 import type { MangaPreview, MangaDetail, ChapterInfo } from '@/types/crawler.types'
-import { generateSlug, parseChapterNumber } from './utils'
+import { generateSlug, parseChapterNumber, pbkdf2Async, aesDecryptAsync } from './utils'
 
 export class VyvyCrawler implements CrawlerImplementation {
   name = 'VyvyComi'
@@ -98,7 +98,7 @@ export class VyvyCrawler implements CrawlerImplementation {
       const chapterLink = node.getAttribute('href') || ''
       if (chapterName && chapterLink) {
         chapters.push({
-          name: String(parseChapterNumber(chapterName)),
+          name: `Chapter ${parseChapterNumber(chapterName)}`,
           link: chapterLink,
           order: parseChapterNumber(chapterName)
         })
@@ -121,7 +121,7 @@ export class VyvyCrawler implements CrawlerImplementation {
     }
   }
 
-  parseChapterImages(html: string): string[] {
+  async parseChapterImages(html: string): Promise<string[]> {
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, 'text/html')
 
@@ -154,7 +154,7 @@ export class VyvyCrawler implements CrawlerImplementation {
 
     try {
       // Decrypt the content
-      const decrypted = cryptoJSAesDecrypt('EhwuFpSJkhMVuUPzrw', dataEncode)
+      const decrypted = await cryptoJSAesDecrypt('EhwuFpSJkhMVuUPzrw', dataEncode)
       if (!decrypted) {
         console.warn('VyvyComi: Decryption failed')
         return []
@@ -192,7 +192,7 @@ export class VyvyCrawler implements CrawlerImplementation {
 }
 
 // Crypto Helpers
-function cryptoJSAesDecrypt(passphrase: string, jsonString: string): string | null {
+async function cryptoJSAesDecrypt(passphrase: string, jsonString: string): Promise<string | null> {
   try {
     const jsonData = JSON.parse(jsonString)
     const salt = hexToBytes(jsonData.salt)
@@ -201,10 +201,9 @@ function cryptoJSAesDecrypt(passphrase: string, jsonString: string): string | nu
 
     // Derive key using PBKDF2
     const iterations = 999
-    const key = pbkdf2(passphrase, salt, iterations, 32, 'SHA-512')
-
+    const key = await pbkdf2Async(passphrase, salt, iterations, 32)
     // Decrypt using AES-256-CBC
-    const decrypted = aesDecrypt(ciphertext, key, iv)
+    const decrypted = await aesDecryptAsync(ciphertext, key, iv)
     return decrypted
   } catch (error) {
     console.error('Decryption error:', error)
@@ -218,25 +217,4 @@ function hexToBytes(hex: string): Uint8Array {
     bytes[i / 2] = parseInt(hex.substring(i, i + 2), 16)
   }
   return bytes
-}
-
-// Synchronous PBKDF2 fallback (simplified)
-function pbkdf2(
-  _password: string,
-  _salt: Uint8Array,
-  _iterations: number,
-  keyLength: number,
-  _hash: string
-): Uint8Array {
-  // Use Web Crypto API synchronously if possible
-  // For now, return a placeholder that triggers async path
-  console.warn('PBKDF2: Using placeholder - VyvyComi images may not work')
-  return new Uint8Array(keyLength)
-}
-
-function aesDecrypt(_ciphertext: string, _key: Uint8Array, _iv: Uint8Array): string {
-  // Browser AES decryption would require Web Crypto API (async)
-  // For VyvyComi support, we'd need async decrypt
-  console.warn('AES decrypt: Not fully implemented for browser')
-  return ''
 }

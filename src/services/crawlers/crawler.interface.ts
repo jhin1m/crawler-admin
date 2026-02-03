@@ -8,5 +8,5 @@ export interface CrawlerImplementation {
   getListUrl(page: number): string
   parseList(html: string): MangaPreview[]
   parseDetail(html: string): MangaDetail
-  parseChapterImages(html: string): string[]
+  parseChapterImages(html: string): Promise<string[]>
 }

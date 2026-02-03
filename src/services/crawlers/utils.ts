@@ -109,7 +109,7 @@ export async function pbkdf2Async(
   const derivedBits = await crypto.subtle.deriveBits(
     {
       name: 'PBKDF2',
-      salt: salt as BufferSource,
+      salt: salt as unknown as BufferSource,
       iterations: iterations,
       hash: 'SHA-512'
     },
@@ -118,4 +118,36 @@ export async function pbkdf2Async(
   )
 
   return new Uint8Array(derivedBits)
+}
+
+export async function aesDecryptAsync(
+  ciphertext: string,
+  key: Uint8Array,
+  iv: Uint8Array
+): Promise<string> {
+  try {
+    // Convert binary string to Uint8Array
+    const ciphertextBytes = new Uint8Array(ciphertext.length)
+    for (let i = 0; i < ciphertext.length; i++) {
+      ciphertextBytes[i] = ciphertext.charCodeAt(i)
+    }
+
+    const cryptoKey = await crypto.subtle.importKey('raw', key as unknown as BufferSource, { name: 'AES-CBC' }, false, [
+      'decrypt'
+    ])
+
+    const decrypted = await crypto.subtle.decrypt(
+      {
+        name: 'AES-CBC',
+        iv: iv
+      },
+      cryptoKey,
+      ciphertextBytes
+    )
+
+    return new TextDecoder().decode(decrypted)
+  } catch (error) {
+    console.error('AES Decryption error:', error)
+    return ''
+  }
 }

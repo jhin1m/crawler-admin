@@ -120,7 +120,7 @@ export class TruyenVnCrawler implements CrawlerImplementation {
     }
   }
 
-  parseChapterImages(html: string): string[] {
+  async parseChapterImages(html: string): Promise<string[]> {
     const parser = new DOMParser()
     const doc = parser.parseFromString(html, 'text/html')
 
