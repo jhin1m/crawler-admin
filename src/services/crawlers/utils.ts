@@ -1,6 +1,9 @@
 // CORS Proxy URLs - use multiple for fallback
 const CORS_PROXIES = [
-  'https://api.codetabs.com/v1/proxy?quest='
+  'https://api.codetabs.com/v1/proxy?quest=',
+  'https://api.cors.lol/?url=',
+  'https://cors-anywhere.com/',
+
 ]
 
 /**

@@ -8,7 +8,12 @@ export const CRAWLER_SOURCES = {
   vyvy: {
     name: 'VyvyComi',
     baseUrl: 'https://vivicomi14.info'
+  },
+  vinahentai: {
+    name: 'VinaHentai',
+    baseUrl: 'https://vinahentai.fun'
   }
+
 } as const
 
 export const STORAGE_TYPES = {

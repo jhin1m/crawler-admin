@@ -1,4 +1,4 @@
-export type CrawlerSource = 'truyenvn' | 'vyvy'
+export type CrawlerSource = 'truyenvn' | 'vyvy' | 'vinahentai'
 export type StorageType = 's3' | 'hotlink'
 export type CrawlStatus = 'idle' | 'pending' | 'preparing' | 'selecting' | 'previewing' | 'crawling' | 'success' | 'failed'
 
