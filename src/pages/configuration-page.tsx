@@ -87,6 +87,20 @@ export function ConfigurationPage() {
                 })}
               />
             </div>
+            <div className="grid gap-2">
+              <Label htmlFor="viHentai">ViHentai URL</Label>
+              <Input
+                id="viHentai"
+                value={config.crawlers.viHentai.baseUrl}
+                onChange={(e) => setConfig({
+                  ...config,
+                  crawlers: {
+                    ...config.crawlers,
+                    viHentai: { ...config.crawlers.viHentai, baseUrl: e.target.value }
+                  }
+                })}
+              />
+            </div>
           </CardContent>
         </Card>
 

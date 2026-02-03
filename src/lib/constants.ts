@@ -12,6 +12,10 @@ export const CRAWLER_SOURCES = {
   vinahentai: {
     name: 'VinaHentai',
     baseUrl: 'https://vinahentai.fun'
+  },
+  vihentai: {
+    name: 'ViHentai',
+    baseUrl: 'https://vi-hentai.moe'
   }
 
 } as const

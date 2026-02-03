@@ -10,6 +10,9 @@ export interface AppConfig {
     truyenVn: {
       baseUrl: string
     }
+    viHentai: {
+      baseUrl: string
+    }
   }
   corsProxies: string[]
 }
@@ -24,6 +27,9 @@ const DEFAULT_CONFIG: AppConfig = {
     },
     truyenVn: {
       baseUrl: 'https://truyenvn.shop'
+    },
+    viHentai: {
+      baseUrl: 'https://vi-hentai.moe'
     }
   },
   corsProxies: [
@@ -67,6 +73,10 @@ export const configService = {
 
   getTruyenVnUrl() {
     return this.getConfig().crawlers.truyenVn.baseUrl
+  },
+
+  getViHentaiUrl() {
+    return this.getConfig().crawlers.viHentai.baseUrl
   },
 
   getCorsProxies() {

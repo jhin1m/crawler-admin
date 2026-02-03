@@ -7,6 +7,7 @@ import type {
   PreviewResponse
 } from '@/types/crawler.types'
 import type { ApiResponse } from '@/types/api.types'
+import { configService } from './config.service'
 
 /**
  * Note: These endpoints assume backend provides crawler proxy.
@@ -96,13 +97,23 @@ export const crawlerUtils = {
     const configs = {
       truyenvn: {
         name: 'TruyenVN',
-        baseUrl: 'https://truyenvn.shop',
+        baseUrl: configService.getTruyenVnUrl(),
         listPath: '/the-loai/truyen-tranh-18/page/'
       },
       vyvy: {
         name: 'VyvyComi',
-        baseUrl: 'https://vivicomi14.info',
+        baseUrl: configService.getVyvyUrl(),
         listPath: '/the-loai/18/?page='
+      },
+      vinahentai: {
+        name: 'VinaHentai',
+        baseUrl: configService.getVinaHentaiUrl(),
+        listPath: '/danh-sach?page='
+      },
+      vihentai: {
+        name: 'ViHentai',
+        baseUrl: configService.getViHentaiUrl(),
+        listPath: '/danh-sach?page='
       }
     }
     return configs[source]
